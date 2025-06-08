@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>📸</text></svg>">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Compressor & Resizer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+    /* Reset and base */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: linear-gradient(135deg, #4e54c8, #8f94fb);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem;
+      color: #333;
+    }
+    .container {
+      background: #fff;
+      border-radius: 12px;
+      max-width: 480px;
+      width: 100%;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.2);
+      text-align: center;
+      user-select: none;
+    }
+
+    h1 {
+      font-weight: 00;
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      color: #3a3a8c;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.);
+    }
+
+    input[type="file"] {
+      margin-bottom: 1.5rem;
+      cursor: pointer;
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1.8px solid #8f94fb;
+      transition: border-color 0.3s ease;
+    }
+    input[type="file"]:focus {
+      outline: none;
+      border-color: #4e54c8;
+      box-shadow: 0 0 8px #4e54c8aa;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 1rem;
+      margin-bottom: 0.4rem;
+      color: #555;
+      text-align: left;
+      user-select: text;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1.8px solid #ccc;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    input[type="number"]:focus {
+      border-color: #4e54c8;
+      box-shadow: 0 0 6px #4e54c8aa;
+      outline: none;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .row > div {
+      flex: 1;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      margin-top: 1rem;
+      user-select: none;
+    }
+    .checkbox-group input[type="checkbox"] {
+      margin-right: 0.5rem;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .checkbox-group label {
+      user-select: none;
+      cursor: pointer;
+      font-weight: 500;
+      color: #444;
+    }
+
+    button {
+      background: #4e54c8;
+      color: white;
+      border: none;
+      padding: 0.7rem 1.8rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1.4rem;
+      margin-right: 1rem;
+      box-shadow: 0 8px 15px rgba(78,84,200,0.3);
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+      user-select: none;
+    }
+    button:hover {
+      background: #3b3f99;
+      box-shadow: 0 12px 20px rgba(59,63,153,0.5);
+    }
+    button:active {
+      transform: translateY(2px);
+      box-shadow: 0 6px 10px rgba(59,63,153,0.4);
+    }
+    button:disabled {
+      background: #999;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    #preview {
+      margin-top: 2rem;
+    }
+    #preview p {
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 0.6rem;
+    }
+    #preview img {
+      max-width: 100%;
+      border-radius: 10px;
+      border: 2px solid #4e54c8;
+      box-shadow: 0 6px 20px rgba(78,84,200,0.4);
+      transition: transform 0.3s ease;
+      user-select: none;
+    }
+    #preview img:hover {
+      transform: scale(1.03);
+    }
+
+    #preview a {
+      display: inline-block;
+      margin-top: 0.6rem;
+      text-decoration: none;
+      font-weight: 600;
+      color: #4e54c8;
+      border: 2px solid #4e54c8;
+      padding: 0.3rem 1rem;
+      border-radius: 6px;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      user-select: none;
+    }
+    #preview a:hover {
+      background-color: #4e54c8;
+      color: white;
+    }
+
+    #info {
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: #666;
+      line-height: 1.5;
+      user-select: text;
+    }
+
+    /* Responsive */
+    @media (max-width: 500px) {
+      .row {
+        flex-direction: column;
+      }
+      button {
+        margin-right: 0;
+        margin-bottom: 1rem;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Compressor &amp; Resizer</h1>
+    <label for="file-input" style="font-weight:600; color:#555; display:block; text-align:left; margin-bottom:0.4rem; user-select:text;">
+    Choose Image
+    </label>
+    <input type="file" id="file-input" accept="image/*" />
+
+    <div class="row">
+      <div>
+        <label for="quality">Compression Quality (0.1–1):</label>
+        <input type="number" id="quality" step="0.1" min="0.1" max="1" value="0.7" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="width">Output Width (px):</label>
+        <input type="number" id="width" placeholder="e.g. 800" />
+      </div>
+      <div>
+        <label for="height">Output Height (px):</label>
+        <input type="number" id="height" placeholder="e.g. 600" />
+      </div>
+    </div>
+
+    <div class="checkbox-group">
+      <input type="checkbox" id="keep-aspect" checked />
+      <label for="keep-aspect">Keep aspect ratio</label>
+    </div>
+
+    <div class="row" style="justify-content: center; margin-top: 1.5rem;">
+      <button id="compress-btn" disabled>Compress Image</button>
+      <button id="resize-btn" disabled>Resize Only (No Compression)</button>
+    </div>
+
+    <div id="preview"></div>
+    <div id="info"></div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("file-input");
+    const compressBtn = document.getElementById("compress-btn");
+    const resizeBtn = document.getElementById("resize-btn");
+    const qualityInput = document.getElementById("quality");
+    const widthInput = document.getElementById("width");
+    const heightInput = document.getElementById("height");
+    const keepAspect = document.getElementById("keep-aspect");
+    const preview = document.getElementById("preview");
+    const info = document.getElementById("info");
+
+    let selectedFile = null;
+    let originalAspectRatio = null;
+
+    fileInput.addEventListener("change", (e) => {
+      selectedFile = e.target.files[0];
+      if (!selectedFile) return;
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = function () {
+          originalAspectRatio = img.width / img.height;
+
+          // Initialize width and height inputs to original values
+          widthInput.value = img.width;
+          heightInput.value = img.height;
+
+          // Enable buttons now that we have an image
+          compressBtn.disabled = false;
+          resizeBtn.disabled = false;
+
+          // Clear previous previews/info
+          preview.innerHTML = "";
+          info.innerHTML = "";
+        };
+      };
+      reader.readAsDataURL(selectedFile);
+    });
+
+    function updateHeight() {
+      if (keepAspect.checked && originalAspectRatio) {
+        const widthVal = parseInt(widthInput.value);
+        if (!isNaN(widthVal)) {
+          heightInput.value = Math.round(widthVal / originalAspectRatio);
+        }
+      }
+    }
+
+    function updateWidth() {
+      if (keepAspect.checked && originalAspectRatio) {
+        const heightVal = parseInt(heightInput.value);
+        if (!isNaN(heightVal)) {
+          widthInput.value = Math.round(heightVal * originalAspectRatio);
+        }
+      }
+    }
+
+    widthInput.addEventListener("input", () => {
+      if (keepAspect.checked) {
+        updateHeight();
+      }
+    });
+
+    heightInput.addEventListener("input", () => {
+      if (keepAspect.checked) {
+        updateWidth();
+      }
+    });
+
+    keepAspect.addEventListener("change", () => {
+  if (keepAspect.checked && originalAspectRatio) {
+    const widthVal = parseInt(widthInput.value);
+    const heightVal = parseInt(heightInput.value);
+
+    if (!isNaN(widthVal)) {
+      heightInput.value = Math.round(widthVal / originalAspectRatio);
+    } else if (!isNaN(heightVal)) {
+      widthInput.value = Math.round(heightVal * originalAspectRatio);
+    }
+  }
+});
+
+
+    function formatSize(bytes) {
+      if (bytes >= 1e9) {
+        return (bytes / 1e9).toFixed(2) + " GB";
+      } else if (bytes >= 1e6) {
+        return (bytes / 1e6).toFixed(2) + " MB";
+      } else if (bytes >= 1024) {
+        return (bytes / 1024).toFixed(2) + " KB";
+      } else {
+        return bytes + " B";
+      }
+    }
+
+    function processImage(doCompress) {
+      if (!selectedFile) {
+        alert("Please select an image.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const img = new Image();
+        img.src = event.target.result;
+
+        img.onload = function () {
+          let outputWidth = parseInt(widthInput.value) || img.width;
+          let outputHeight = parseInt(heightInput.value) || img.height;
+
+          if (keepAspect.checked && originalAspectRatio) {
+            const ratio = originalAspectRatio;
+            if (!widthInput.value && heightInput.value) {
+              outputWidth = Math.round(outputHeight * ratio);
+            } else if (widthInput.value && !heightInput.value) {
+              outputHeight = Math.round(outputWidth / ratio);
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = outputWidth;
+          canvas.height = outputHeight;
+
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, outputWidth, outputHeight);
+
+          const originalSizeBytes = selectedFile.size;
+          const originalWidth = img.width;
+          const originalHeight = img.height;
+
+          if (doCompress) {
+            const quality = parseFloat(qualityInput.value);
+            canvas.toBlob(
+              (blob) => {
+                displayResult(blob, originalWidth, originalHeight, originalSizeBytes, canvas.width, canvas.height);
+              },
+              "image/jpeg",
+              quality
+            );
+          } else {
+            canvas.toBlob(
+              (blob) => {
+                displayResult(blob, originalWidth, originalHeight, originalSizeBytes, canvas.width, canvas.height);
+              },
+              "image/png"
+            );
+          }
+        };
+      };
+
+      reader.readAsDataURL(selectedFile);
+    }
+
+    function displayResult(blob, originalWidth, originalHeight, originalSizeBytes, newWidth, newHeight) {
+      const compressedURL = URL.createObjectURL(blob);
+      const outputSizeBytes = blob.size;
+
+      const originalSizeStr = formatSize(originalSizeBytes);
+      const outputSizeStr = formatSize(outputSizeBytes);
+
+      preview.innerHTML = `
+        <p>Output Image:</p>
+        <img src="${compressedURL}" alt="Output Image" draggable="false" />
+        <br><a href="${compressedURL}" download="output_image.${blob.type.split('/')[1]}">Download Image</a>
+      `;
+
+      info.innerHTML = `
+        <p><strong>Original Size:</strong> ${originalWidth}×${originalHeight}px, ${originalSizeStr}</p>
+        <p><strong>Output Size:</strong> ${newWidth}×${newHeight}px, ${outputSizeStr}</p>
+      `;
+    }
+
+    compressBtn.addEventListener("click", () => processImage(true));
+    resizeBtn.addEventListener("click", () => processImage(false));
+  </script>
+</body>
+</html>
