@@ -49,13 +49,26 @@
       width: 100%;
       padding: 0.5rem;
       border-radius: 6px;
-      border: 1.8px solid #8f94fb;
+      border: none;
       transition: border-color 0.3s ease;
     }
     input[type="file"]:focus {
       outline: none;
       border-color: #4e54c8;
       box-shadow: 0 0 8px #4e54c8aa;
+    }
+
+    .file-drop-zone {
+      border: 2px dashed #8f94fb;
+      border-radius: 6px;
+      padding: 0.5rem 0.5rem 0.0rem 6rem;
+      margin-bottom: 0.5rem;
+      transition: border-color 0.3s ease, background-color 0.3s ease;
+      cursor: pointer;
+    }
+    .file-drop-zone.drag-over {
+      border-color: #4e54c8;
+      background-color: rgba(78,84,200,0.1);
     }
 
     label {
@@ -79,6 +92,24 @@
       text-align: center;
     }
     input[type="number"]:focus {
+      border-color: #4e54c8;
+      box-shadow: 0 0 6px #4e54c8aa;
+      outline: none;
+    }
+
+    select {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1.8px solid #ccc;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+      text-align: center;
+      background: white;
+      color: #333;
+    }
+    select:focus {
       border-color: #4e54c8;
       box-shadow: 0 0 6px #4e54c8aa;
       outline: none;
@@ -206,12 +237,21 @@
     <label for="file-input" style="font-weight:600; color:#555; display:block; text-align:left; margin-bottom:0.4rem; user-select:text;">
     Choose Image
     </label>
-    <input type="file" id="file-input" accept="image/*" />
+    <div class="file-drop-zone">
+      <input type="file" id="file-input" accept="image/*" />
+    </div>
 
     <div class="row">
       <div>
         <label for="quality">Compression Quality (0.1–1):</label>
         <input type="number" id="quality" step="0.1" min="0.1" max="1" value="0.7" />
+      </div>
+      <div style="padding-top: 1.2rem;">
+        <label for="format">Output Format:</label>
+        <select id="format">
+          <option value="jpeg">JPG</option>
+          <option value="png">PNG</option>
+        </select>
       </div>
     </div>
 
@@ -229,6 +269,8 @@
     <div class="checkbox-group">
       <input type="checkbox" id="keep-aspect" checked />
       <label for="keep-aspect">Keep aspect ratio</label>
+      <input type="checkbox" id="greyscale" style="margin-left: 3.5rem;" />
+      <label for="greyscale">Convert to Greyscale</label>
     </div>
 
     <div class="row" style="justify-content: center; margin-top: 1.5rem;">
@@ -245,9 +287,11 @@
     const compressBtn = document.getElementById("compress-btn");
     const resizeBtn = document.getElementById("resize-btn");
     const qualityInput = document.getElementById("quality");
+  const formatSelect = document.getElementById("format");
     const widthInput = document.getElementById("width");
     const heightInput = document.getElementById("height");
     const keepAspect = document.getElementById("keep-aspect");
+    const greyscale = document.getElementById("greyscale");
     const preview = document.getElementById("preview");
     const info = document.getElementById("info");
 
@@ -270,7 +314,7 @@
           heightInput.value = img.height;
 
           // Enable buttons now that we have an image
-          compressBtn.disabled = false;
+          updateCompressButton(formatSelect.value);
           resizeBtn.disabled = false;
 
           // Clear previous previews/info
@@ -325,6 +369,63 @@
 });
 
 
+    // Disable quality input when PNG is selected (PNG doesn't use jpeg quality)
+    if (formatSelect) {
+      // initialize state
+      qualityInput.disabled = formatSelect.value === 'png';
+      updateCompressButton(formatSelect.value);
+      formatSelect.addEventListener('change', () => {
+        qualityInput.disabled = formatSelect.value === 'png';
+        updateCompressButton(formatSelect.value);
+      });
+    }
+
+    function updateCompressButton(format) {
+      if (!selectedFile) {
+        compressBtn.disabled = true;
+        compressBtn.textContent = 'Compress Image';
+      } else if (format === 'png') {
+        compressBtn.disabled = true;
+        compressBtn.textContent = 'PNG Compression Not Supported';
+      } else {
+        compressBtn.disabled = false;
+        compressBtn.textContent = 'Compress Image';
+      }
+    }
+
+    // Drag and drop functionality
+    const dropZone = document.querySelector('.file-drop-zone');
+    if (dropZone) {
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('drag-over');
+      });
+
+      dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('drag-over');
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('drag-over');
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+          // Create a new DataTransfer to set the files
+          const dt = new DataTransfer();
+          dt.items.add(files[0]);
+          fileInput.files = dt.files;
+          // Trigger the change event
+          fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+    }
+
+
     function formatSize(bytes) {
       if (bytes >= 1e9) {
         return (bytes / 1e9).toFixed(2) + " GB";
@@ -366,27 +467,40 @@
           canvas.height = outputHeight;
 
           const ctx = canvas.getContext("2d");
+          if (greyscale.checked) {
+            ctx.filter = 'grayscale(100%)';
+          }
           ctx.drawImage(img, 0, 0, outputWidth, outputHeight);
+          // Reset filter if set
+          if (greyscale.checked) {
+            ctx.filter = 'none';
+          }
 
           const originalSizeBytes = selectedFile.size;
           const originalWidth = img.width;
           const originalHeight = img.height;
 
-          if (doCompress) {
-            const quality = parseFloat(qualityInput.value);
+          // Respect the selected output format (jpeg or png).
+          const selectedFormat = (formatSelect && formatSelect.value) ? formatSelect.value : 'jpeg';
+          const mimeType = selectedFormat === 'png' ? 'image/png' : 'image/jpeg';
+
+          if (mimeType === 'image/jpeg') {
+            // For JPEG, use quality when compressing; when "resize only" is chosen, use max quality (no compression)
+            const quality = doCompress ? (parseFloat(qualityInput.value) || 0.7) : 1.0;
             canvas.toBlob(
               (blob) => {
                 displayResult(blob, originalWidth, originalHeight, originalSizeBytes, canvas.width, canvas.height);
               },
-              "image/jpeg",
+              mimeType,
               quality
             );
           } else {
+            // PNG: quality parameter is ignored by PNG encoding in browsers
             canvas.toBlob(
               (blob) => {
                 displayResult(blob, originalWidth, originalHeight, originalSizeBytes, canvas.width, canvas.height);
               },
-              "image/png"
+              mimeType
             );
           }
         };
@@ -402,10 +516,13 @@
       const originalSizeStr = formatSize(originalSizeBytes);
       const outputSizeStr = formatSize(outputSizeBytes);
 
+      const rawExt = blob.type.split('/')[1] || 'png';
+      const ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
+
       preview.innerHTML = `
         <p>Output Image:</p>
         <img src="${compressedURL}" alt="Output Image" draggable="false" />
-        <br><a href="${compressedURL}" download="output_image.${blob.type.split('/')[1]}">Download Image</a>
+        <br><a href="${compressedURL}" download="output_image.${ext}">Download Image</a>
       `;
 
       info.innerHTML = `
